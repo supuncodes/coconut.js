@@ -1,106 +1,106 @@
 (function (){
 
-	var DOMManager = (function (){
-		var elementwatchers = {};
+	function WatchableObject(d, decObj, el){
 
-		function WatchableInput(path,element){
-			element.addEventListener("input", function(arg){
-				DOMManager.update(path,arg.target.value, element);
-			});
-		}
+		var DOMManager = (function (){
+			var elementwatchers = {};
 
-		function ClickableInput(element, func){
-			element.addEventListener("click", function(){
-				func();
-			});
-		}
-
-		return {
-			watch: function(path, element, property, template){
-				if (!elementwatchers[path])
-					elementwatchers[path] = [];
-
-				elementwatchers[path].push({
-					element:element,
-					property: property,
-					template: template
+			function WatchableInput(path,element){
+				element.addEventListener("input", function(arg){
+					DOMManager.update(path,arg.target.value, element);
 				});
-			},
-			traverse: function(path, e,dec){
-				if (!dec)
-					dec = {};
+			}
 
-				var elementQueue = [document.getElementById(e)];
+			function ClickableInput(element, func){
+				element.addEventListener("click", function(){
+					func();
+				});
+			}
 
-				while (elementQueue.length != 0){
-					var ce = elementQueue[0];
-					for(cei in ce.children) 
-						elementQueue.push(ce.children[cei]);
-					elementQueue.splice(0,1);
-					
-					for (ai in ce.attributes){
-						var attrib = ce.attributes[ai]
+			return {
+				watch: function(path, element, property, template){
+					if (!elementwatchers[path])
+						elementwatchers[path] = [];
 
-						if (attrib.name === "pol-bind"){
-							if (ce.tagName === "INPUT"){
-								new WatchableInput(path + "." + attrib.value, ce);
-								var propPath = path + "." + attrib.value;
-								this.watch(propPath, ce, "value");
+					elementwatchers[path].push({
+						element:element,
+						property: property,
+						template: template
+					});
+				},
+				traverse: function(path, e,dec){
+					if (!dec)
+						dec = {};
 
-								var currentVal = eval(propPath.replace("scope", "dec"));
-								if (currentVal)
-									ce.value = currentVal;
-							}else{
-								if (attrib.value.trim() === ""){
-									var str = ce.innerHTML;
-									if (str)
-									if (str.contains("{{") && str.contains("}}")){
-										var propName = str.substring(str.indexOf("{{") +2, str.indexOf("}}"));
-										var propPath = path + "." + propName;
-										this.watch(propPath, ce, "@@INNER", str);
+					var elementQueue = [document.getElementById(e)];
 
-										var currentVal = eval(propPath.replace("scope", "dec"));
-										if (currentVal)
-											ce.innerHTML = str.replace("{{" + propName +"}}", currentVal);
+					while (elementQueue.length != 0){
+						var ce = elementQueue[0];
+						for(cei in ce.children) 
+							elementQueue.push(ce.children[cei]);
+						elementQueue.splice(0,1);
+						
+						for (ai in ce.attributes){
+							var attrib = ce.attributes[ai]
+
+							if (attrib.name === "pol-bind"){
+								if (ce.tagName === "INPUT"){
+									new WatchableInput(path + "." + attrib.value, ce);
+									var propPath = path + "." + attrib.value;
+									this.watch(propPath, ce, "value");
+
+									var currentVal = eval(propPath.replace("scope", "dec"));
+									if (currentVal)
+										ce.value = currentVal;
+								}else{
+									if (attrib.value.trim() === ""){
+										var str = ce.innerHTML;
+										if (str)
+										if (str.contains("{{") && str.contains("}}")){
+											var propName = str.substring(str.indexOf("{{") +2, str.indexOf("}}"));
+											var propPath = path + "." + propName;
+											this.watch(propPath, ce, "@@INNER", str);
+
+											var currentVal = eval(propPath.replace("scope", "dec"));
+											if (currentVal)
+												ce.innerHTML = str.replace("{{" + propName +"}}", currentVal);
+										}
 									}
 								}
-							}
-						}else if (attrib.name === "pol-click"){
-							var str = attrib.value;
-							new ClickableInput(ce, dec[str]);
-						}else{
-							var str = attrib.value;
-							if (str)
-							if (str.contains("{{") && str.contains("}}")){
-								var propName = str.substring(str.indexOf("{{") + 2, str.indexOf("}}"));
-								var propPath = path + "." + propName;
-								this.watch(propPath, ce, attrib.name, str);
+							}else if (attrib.name === "pol-click"){
+								var str = attrib.value;
+								new ClickableInput(ce, dec[str]);
+							}else{
+								var str = attrib.value;
+								if (str)
+								if (str.contains("{{") && str.contains("}}")){
+									var propName = str.substring(str.indexOf("{{") + 2, str.indexOf("}}"));
+									var propPath = path + "." + propName;
+									this.watch(propPath, ce, attrib.name, str);
+								}
 							}
 						}
 					}
-				}
 
-				return dec;
-			},
-			update: function(p,v,e){
-				var elements = elementwatchers[p];
-				if (elements){
-					for(ei in elements)
-						if (elements[ei].element !== e){
-							if (elements[ei].property == "@@INNER")
-								if (elements[ei].template)
-									elements[ei].element.innerHTML = elements[ei].template.replace("{{"+ p.replace("scope.","") +"}}", v);
+					return dec;
+				},
+				update: function(p,v,e){
+					var elements = elementwatchers[p];
+					if (elements){
+						for(ei in elements)
+							if (elements[ei].element !== e){
+								if (elements[ei].property == "@@INNER")
+									if (elements[ei].template)
+										elements[ei].element.innerHTML = elements[ei].template.replace("{{"+ p.replace("scope.","") +"}}", v);
+									else
+										elements[ei].element.innerHTML = v;
 								else
-									elements[ei].element.innerHTML = v;
-							else
-								elements[ei].element.setAttribute(elements[ei].property, v);
-						}
+									elements[ei].element.setAttribute(elements[ei].property, v);
+							}
+					}
 				}
 			}
-		}
-	})()
-
-	function WatchableObject(d, decObj, el){
+		})()
 
 		var isInitializing = true;
 		function WatchableProperty(obj, prop, path){
