@@ -1,114 +1,201 @@
-(function(){
+(function (){
 
-	var components = [];
+	var DOMManager = (function (){
+		var elementwatchers = {};
 
-	function Component (e,h){
+		function WatchableInput(path,element){
+			element.addEventListener("input", function(arg){
+				DOMManager.update(path,arg.target.value, element);
+			});
+		}
 
-		var el;
-		var watchers ={};
+		function ClickableInput(element, func){
+			element.addEventListener("click", function(){
+				func();
+			});
+		}
 
-		function Watcher(el,p,t){
+		return {
+			watch: function(path, element, property, template){
+				if (!elementwatchers[path])
+					elementwatchers[path] = [];
 
-			return {
-				element: el,
-				property: p,
-				template: t
+				elementwatchers[path].push({
+					element:element,
+					property: property,
+					template: template
+				});
+			},
+			traverse: function(path, e,dec){
+				if (!dec)
+					dec = {};
+
+				var elementQueue = [document.getElementById(e)];
+
+				while (elementQueue.length != 0){
+					var ce = elementQueue[0];
+					for(cei in ce.children) 
+						elementQueue.push(ce.children[cei]);
+					elementQueue.splice(0,1);
+					
+					for (ai in ce.attributes){
+						var attrib = ce.attributes[ai]
+
+						if (attrib.name === "pol-bind"){
+							if (ce.tagName === "INPUT"){
+								new WatchableInput(path + "." + attrib.value, ce);
+								var propPath = path + "." + attrib.value;
+								this.watch(propPath, ce, "value");
+
+								var currentVal = eval(propPath.replace("scope", "dec"));
+								if (currentVal)
+									ce.value = currentVal;
+							}else{
+								if (attrib.value.trim() === ""){
+									var str = ce.innerHTML;
+									if (str)
+									if (str.contains("{{") && str.contains("}}")){
+										var propName = str.substring(str.indexOf("{{") +2, str.indexOf("}}"));
+										var propPath = path + "." + propName;
+										this.watch(propPath, ce, "@@INNER", str);
+
+										var currentVal = eval(propPath.replace("scope", "dec"));
+										if (currentVal)
+											ce.innerHTML = str.replace("{{" + propName +"}}", currentVal);
+									}
+								}
+							}
+						}else if (attrib.name === "pol-click"){
+							var str = attrib.value;
+							new ClickableInput(ce, dec[str]);
+						}else{
+							var str = attrib.value;
+							if (str)
+							if (str.contains("{{") && str.contains("}}")){
+								var propName = str.substring(str.indexOf("{{") + 2, str.indexOf("}}"));
+								var propPath = path + "." + propName;
+								this.watch(propPath, ce, attrib.name, str);
+							}
+						}
+					}
+				}
+
+				return dec;
+			},
+			update: function(p,v,e){
+				var elements = elementwatchers[p];
+				if (elements){
+					for(ei in elements)
+						if (elements[ei].element !== e){
+							if (elements[ei].property == "@@INNER")
+								if (elements[ei].template)
+									elements[ei].element.innerHTML = elements[ei].template.replace("{{"+ p.replace("scope.","") +"}}", v);
+								else
+									elements[ei].element.innerHTML = v;
+							else
+								elements[ei].element.setAttribute(elements[ei].property, v);
+						}
+				}
 			}
 		}
+	})()
 
-		function valueChanged(target,k,v){
-			scope.k = v;
+	function WatchableObject(d, decObj, el){
 
-			var elements = watchers[k];
-
-			for(var i=0;i<elements.length;i++)
-				if (elements[i] != target){
-					if (elements[i].template){
-						if (elements[i].property == "@@innerHTML")
-							elements[i].element.innerHTML = elements[i].template.replace("{{" + k +"}}", v);
-						else
-							elements[i].element.setAttribute(elements[i].property, elements[i].template.replace("{{" + k +"}}", v));
-					}
-					else
-						elements[i].element.setAttribute(elements[i].property, v);
+		var isInitializing = true;
+		function WatchableProperty(obj, prop, path){
+			Object.defineProperty(obj, prop, {set: function (newval) {
+				if (!isInitializing){
+					console.log("property changed : " + path);
+					DOMManager.update(path,newval);
 				}
+			}});
 		}
 
-		function init(){
+		function getWatchableArray(d, arrObj){
+			arrObj.init = function(){
+				for(ai in arrObj){
+					var watchEl;
+					if (typeof arrObj[ai] === "object"){
+						
+						if (arrObj[ai] instanceof Array)
+							watchEl = getWatchableArray(d + "[" + ai + "]", arrObj[ai]);
+						else
+							watchEl = new WatchableObject(d + "[" + ai + "]", arrObj[ai]);
 
-			if (e[0] == "#") 
-				el = document.getElementById(e.substring(1));			
-			if (h) el.innerHTML = h;
+						watchEl.init();
 
-			var allInputs = el.querySelectorAll('input[s-model]');
-			
- 			for (var i = 0; i < allInputs.length; i++){
- 				allInputs[i].addEventListener("input", function(x){
- 					valueChanged(x.target, x.target.getAttribute("s-model"),x.target.value)
- 				}, false);
+					}else if (typeof arrObj[ai] === "function"){
 
- 				var watcher =  new Watcher(allInputs[i], "value");
- 				var objKey = allInputs[i].getAttribute("s-model");
+					}else {
+						//watchEl = new WatchableProperty(this, p, d + "." + p);
+					}
 
- 				if (!watchers[objKey])
- 					watchers[objKey] = [];
+					arrObj[ai] = watchEl;
+				}
 
- 				watchers[objKey].push(watcher);
- 			}
-
-			var allInputs = el.querySelectorAll('[s-bind]');
-			console.log(allInputs);
-
- 			for (var i = 0; i < allInputs.length; i++){
- 				var innerHTML = allInputs[i].innerHTML;
- 				if (innerHTML.contains("{{") && innerHTML.contains("}}")){
- 					
- 					var watcher =  new Watcher(allInputs[i], "@@innerHTML", innerHTML);
- 					var objKey = innerHTML.substring(innerHTML.indexOf("{{") +2, innerHTML.indexOf("}}"));
-
-	 				if (!watchers[objKey])
-	 					watchers[objKey] = [];
-
-	 				console.log(watcher);
-
-	 				watchers[objKey].push(watcher);	
- 				}
- 			}
-
- 			//get all elements that have {{}}
-
-			var allInputs = el.querySelectorAll('[s-click]');
- 			for (var i = 0; i < allInputs.length; i++){
- 				allInputs[i].addEventListener("click", function(x){
- 					var objKey = x.target.getAttribute("s-click");
- 					scope[objKey]();
- 				}, false);
- 			}
-
- 			for (si in scope)
- 				if (!(typeof scope[si] === "function" ||typeof scope[si] === "object"))
-	 			{
-	 				valueChanged (undefined, si, scope[si]);
-	 			}
+			}
+			return arrObj;
 		}
 
-		var scope = {
-			init: init
+		var propUnits = {};
+
+		var fakeObj = {
+			init: function(){
+
+				if (decObj)
+					for (v in decObj)
+						this[v] = decObj[v];
+
+				if (el)
+					decObj = DOMManager.traverse(d, el, this);
+
+				this.makeWatchable();
+				isInitializing = false;
+			},
+			makeWatchableProp: function(p){
+				if (typeof this[p] === "object"){
+					var watchObj;
+					if (this[p] instanceof Array)
+						watchObj = getWatchableArray(d + "." + p, this[p]);
+					else
+						watchObj = new WatchableObject(d + "." + p, this[p]);
+					
+					watchObj.init();
+					propUnits[p] = watchObj;
+					this[p] = watchObj;
+				}else if (typeof this[p] === "function"){
+
+				}else{
+					var tmpVal = this[p];
+					delete this[p];
+					propUnits[p] = new WatchableProperty(this, p, d + "." + p);
+					this[v] = tmpVal;
+				}						
+			},
+			makeWatchable: function(){
+				for (v in this)
+					this.makeWatchableProp(v);
+			},
+			getAttributes: function(){ return decObj;}
 		};
 
-		return scope;
+		return fakeObj;
 	}
 
-	function create(e,h){
-		var nc = new Component(e,h);
-		components.push(nc);
-		return nc;
+	var watchObjects = [];
+	window.coconut = {
+		shell: function(d){
+			var attribs = {};
+			var watchObj = new WatchableObject("scope",attribs, d);
+			watchObjects.push(watchObj);
+			return watchObj;
+		}, 
+		init: function(){
+			for(wi in watchObjects)
+				watchObjects[wi].init();
+		}
 	}
 
-	window.Coconut = {
-		shell:create,
-		init: function(){for(ci in components) components[ci].init();}
-	}
-	
-	window.addEventListener("load", window.Coconut.init);
+	window.addEventListener("load", window.coconut.init);
 })()

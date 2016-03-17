@@ -1,0 +1,26 @@
+<html>
+	<head>
+		<script type="text/javascript" src="coconut.js"></script>
+		<script type="text/javascript">
+			
+			var c = coconut.shell("idMain");
+			c.name = "supun";
+			c.address = "name";
+			c.testObj = {one:"1", two:"2"};
+			c.test = [{three:"1", four:"2"},{three:"1", four:"2"}];
+			c.submit = function(){
+				c.name = "Changed!!!";
+			};
+
+		</script>
+
+	</head>
+	<body>
+		
+		<div id="idMain">
+			<p pol-bind>Hello : {{name}}</p>	
+			<input pol-bind="name" type="text"/>
+			<button pol-click="submit">Submit</button>
+		</div>
+	</body>
+</html>
