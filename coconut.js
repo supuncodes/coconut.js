@@ -3,7 +3,7 @@
 	var PlantBag = (function(){
 		
 		function register(){
-			
+
 		}
 
 		return {
@@ -27,6 +27,19 @@
 		}
 
 		function registerDefaultSeeds(){
+
+			register("pol-repeat", function(el,value, path, watchObj, dec, DOMManager){
+  					el.removeAttribute("pol-repeat");
+  					
+  					var btn = el.cloneNode(true);
+					console.log(el);
+  					console.log(btn);
+
+					el.parentElement.insertBefore(btn,el); 
+				}
+			);
+
+
 			register("pol-click", function(el,value, path, watchObj, dec, DOMManager){
 					el.addEventListener("click", function(){
 						dec[value]();
@@ -81,71 +94,71 @@
 		}
 	})();
 
-	function WatchableObject(d, decObj, el){
 
-		var DOMManager = (function (){
-			var elementwatchers = {};
+	var DOMManager = (function (){
+		var elementwatchers = {};
 
-			return {
-				watch: function(path, element, property, template){
-					if (!elementwatchers[path])
-						elementwatchers[path] = [];
+		return {
+			watch: function(path, element, property, template){
+				if (!elementwatchers[path])
+					elementwatchers[path] = [];
 
-					elementwatchers[path].push({
-						element:element,
-						property: property,
-						template: template
-					});
-				},
-				traverse: function(path, e,dec){
-					if (!dec)
-						dec = {};
+				elementwatchers[path].push({
+					element:element,
+					property: property,
+					template: template
+				});
+			},
+			traverse: function(path, e,dec){
+				if (!dec)
+					dec = {};
 
-					var elementQueue = [document.getElementById(e)];
-					var supportedSeeds = SeedBag.getSupported();
+				var elementQueue = [document.getElementById(e)];
+				var supportedSeeds = SeedBag.getSupported();
 
-					while (elementQueue.length != 0){
-						var ce = elementQueue[0];
-						for(cei in ce.children) 
-							elementQueue.push(ce.children[cei]);
-						elementQueue.splice(0,1);
+				while (elementQueue.length != 0){
+					var ce = elementQueue[0];
+					for(cei in ce.children) 
+						elementQueue.push(ce.children[cei]);
+					elementQueue.splice(0,1);
+					
+					for (ai in ce.attributes){
+						var attrib = ce.attributes[ai]
 						
-						for (ai in ce.attributes){
-							var attrib = ce.attributes[ai]
-							
-							if (supportedSeeds.indexOf(attrib.name) != -1){
-								var seedClass = SeedBag.get(attrib.name);
-								var seedObj = new seedClass(ce,attrib.value, path, this,dec,DOMManager);
-							}
+						if (supportedSeeds.indexOf(attrib.name) != -1){
+							var seedClass = SeedBag.get(attrib.name);
+							var seedObj = new seedClass(ce,attrib.value, path, this,dec,DOMManager);
 						}
 					}
+				}
 
-					return dec;
-				},
-				update: function(p,v,e){
-					var elements = elementwatchers[p];
-					if (elements){
-						for(ei in elements)
-							if (elements[ei].element !== e){
-								if (elements[ei].property == "@@INNER")
-									if (elements[ei].template)
-										elements[ei].element.innerHTML = elements[ei].template.replace("{{"+ p.replace("scope.","") +"}}", v);
-									else
-										elements[ei].element.innerHTML = v;
-								else{
-									if (elements[ei].element.tagName === "INPUT")
-										elements[ei].element.value = v;
-									else
-										elements[ei].element.setAttribute(elements[ei].property, v);
-								}
-									
-									
+				return dec;
+			},
+			update: function(p,v,e){
+				var elements = elementwatchers[p];
+				if (elements){
+					for(ei in elements)
+						if (elements[ei].element !== e){
+							if (elements[ei].property == "@@INNER")
+								if (elements[ei].template)
+									elements[ei].element.innerHTML = elements[ei].template.replace("{{"+ p.replace("scope.","") +"}}", v);
+								else
+									elements[ei].element.innerHTML = v;
+							else{
+								if (elements[ei].element.tagName === "INPUT")
+									elements[ei].element.value = v;
+								else
+									elements[ei].element.setAttribute(elements[ei].property, v);
 							}
-					}
+								
+								
+						}
 				}
 			}
-		})()
+		}
+	})()
 
+	function WatchableObject(d, decObj, el){
 		var isInitializing = true;
 		function WatchableProperty(obj, prop, path){
 			Object.defineProperty(obj, prop, {set: function (newval) {

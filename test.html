@@ -4,7 +4,6 @@
 		<script type="text/javascript">
 
 			(function(){
-				
 				var data = {
 					name: "supun",
 					address:  "name",
@@ -15,8 +14,8 @@
 				var scope = coconut.shell("idMain", {state:data});
 				scope.submit = function(){
 					scope.name = "Changed!!!";
+					scope.testArray[0].three = "2";
 				};
-				scope.toPlant("");
 
 			})()
 		</script>
@@ -26,6 +25,8 @@
 		
 		<div id="idMain">
 			<p pol-bind>Hello : {{name}}</p>	
+			<p pol-bind>Hello : {{testArray[0].three}}</p>
+			<p pol-repeat="a in testArray"><div>Works!!!</div></p>
 			<input pol-bind="name" type="text"/>
 			<input pol-bind="name" type="text"/>
 			<button pol-click="submit">Submit</button>
