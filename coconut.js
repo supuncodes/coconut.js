@@ -94,8 +94,14 @@
 										elements[ei].element.innerHTML = elements[ei].template.replace("{{"+ p.replace("scope.","") +"}}", v);
 									else
 										elements[ei].element.innerHTML = v;
-								else
-									elements[ei].element.setAttribute(elements[ei].property, v);
+								else{
+									if (elements[ei].element.tagName === "INPUT")
+										elements[ei].element.value = v;
+									else
+										elements[ei].element.setAttribute(elements[ei].property, v);
+								}
+									
+									
 							}
 					}
 				}
