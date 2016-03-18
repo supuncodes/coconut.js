@@ -1,21 +1,79 @@
 (function (){
 
+	var SeedBag = (function(){
+
+		var allSeeds = {};
+		var seedList = [];
+
+		function get(seed){
+			if (allSeeds[seed])
+				return allSeeds[seed];
+		}
+
+		function register(seed, data){
+			allSeeds[seed] = data;
+			seedList.push(seed);
+		}
+
+		function registerDefaultSeeds(){
+			register("pol-click", function(el,value, path, watchObj, dec, DOMManager){
+					el.addEventListener("click", function(){
+						dec[value]();
+					});
+				}
+			);
+
+			register("pol-model", function(el,value, path, watchObj, dec, DOMManager){
+					el.addEventListener("input", function(arg){
+						DOMManager.update("scope." + value,arg.target.value, el);
+					});
+				}
+			);
+
+			register("pol-bind", function(el,value, path, watchObj, dec, DOMManager){
+					if (el.tagName === "INPUT"){
+						el.addEventListener("input", function(arg){
+							DOMManager.update(path + "." + value,arg.target.value, el);
+						});
+
+						var propPath = path + "." + value;
+						watchObj.watch(propPath, el, "value");
+
+						var currentVal = eval(propPath.replace("scope", "dec"));
+						if (currentVal)
+							el.value = currentVal;
+					}else{
+						if (value.trim() === ""){
+							var str = el.innerHTML;
+							if (str)
+							if (str.contains("{{") && str.contains("}}")){
+								var propName = str.substring(str.indexOf("{{") +2, str.indexOf("}}"));
+								var propPath = path + "." + propName;
+								watchObj.watch(propPath, el, "@@INNER", str);
+
+								var currentVal = eval(propPath.replace("scope", "dec"));
+								if (currentVal)
+									el.innerHTML = str.replace("{{" + propName +"}}", currentVal);
+							}
+						}
+					}
+				}
+			);
+		}
+
+		registerDefaultSeeds();
+
+		return {
+			get: get,
+			register: register,
+			getSupported: function(){return seedList;}
+		}
+	})();
+
 	function WatchableObject(d, decObj, el){
 
 		var DOMManager = (function (){
 			var elementwatchers = {};
-
-			function WatchableInput(path,element){
-				element.addEventListener("input", function(arg){
-					DOMManager.update(path,arg.target.value, element);
-				});
-			}
-
-			function ClickableInput(element, func){
-				element.addEventListener("click", function(){
-					func();
-				});
-			}
 
 			return {
 				watch: function(path, element, property, template){
@@ -33,6 +91,7 @@
 						dec = {};
 
 					var elementQueue = [document.getElementById(e)];
+					var supportedSeeds = SeedBag.getSupported();
 
 					while (elementQueue.length != 0){
 						var ce = elementQueue[0];
@@ -42,42 +101,10 @@
 						
 						for (ai in ce.attributes){
 							var attrib = ce.attributes[ai]
-
-							if (attrib.name === "pol-bind"){
-								if (ce.tagName === "INPUT"){
-									new WatchableInput(path + "." + attrib.value, ce);
-									var propPath = path + "." + attrib.value;
-									this.watch(propPath, ce, "value");
-
-									var currentVal = eval(propPath.replace("scope", "dec"));
-									if (currentVal)
-										ce.value = currentVal;
-								}else{
-									if (attrib.value.trim() === ""){
-										var str = ce.innerHTML;
-										if (str)
-										if (str.contains("{{") && str.contains("}}")){
-											var propName = str.substring(str.indexOf("{{") +2, str.indexOf("}}"));
-											var propPath = path + "." + propName;
-											this.watch(propPath, ce, "@@INNER", str);
-
-											var currentVal = eval(propPath.replace("scope", "dec"));
-											if (currentVal)
-												ce.innerHTML = str.replace("{{" + propName +"}}", currentVal);
-										}
-									}
-								}
-							}else if (attrib.name === "pol-click"){
-								var str = attrib.value;
-								new ClickableInput(ce, dec[str]);
-							}else{
-								var str = attrib.value;
-								if (str)
-								if (str.contains("{{") && str.contains("}}")){
-									var propName = str.substring(str.indexOf("{{") + 2, str.indexOf("}}"));
-									var propPath = path + "." + propName;
-									this.watch(propPath, ce, attrib.name, str);
-								}
+							
+							if (supportedSeeds.indexOf(attrib.name) != -1){
+								var seedClass = SeedBag.get(attrib.name);
+								var seedObj = new seedClass(ce,attrib.value, path, this,dec,DOMManager);
 							}
 						}
 					}
@@ -112,7 +139,6 @@
 		function WatchableProperty(obj, prop, path){
 			Object.defineProperty(obj, prop, {set: function (newval) {
 				if (!isInitializing){
-					console.log("property changed : " + path);
 					DOMManager.update(path,newval);
 				}
 			}});
