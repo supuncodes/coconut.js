@@ -1,5 +1,16 @@
 (function (){
 
+	var PlantBag = (function(){
+		
+		function register(){
+			
+		}
+
+		return {
+			register:register
+		}
+	})();
+
 	var SeedBag = (function(){
 
 		var allSeeds = {};
@@ -209,7 +220,12 @@
 				for (v in this)
 					this.makeWatchableProp(v);
 			},
-			getAttributes: function(){ return decObj;}
+			getAttributes: function(){ return decObj;},
+			merge: function(obj){
+				for (ok in obj)
+					decObj[ok] = obj[ok];
+			},
+			toPlant: function(name){PlantBag.register(name, this);}
 		};
 
 		return fakeObj;
@@ -217,11 +233,18 @@
 
 	var watchObjects = [];
 	window.coconut = {
-		shell: function(d){
-			var attribs = {};
-			var watchObj = new WatchableObject("scope",attribs, d);
+		shell: function(id, data){
+			var att;
+			if (data)
+				if (data.state)
+					att = data.state;
+
+			if (!att) att = {};
+
+			var watchObj = new WatchableObject("scope",att, id);
 			watchObjects.push(watchObj);
 			return watchObj;
+
 		}, 
 		init: function(){
 			for(wi in watchObjects)
