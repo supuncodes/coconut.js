@@ -29,13 +29,17 @@
 		function registerDefaultSeeds(){
 
 			register("pol-repeat", function(el,value, path, watchObj, dec, DOMManager){
-  					el.removeAttribute("pol-repeat");
-  					
-  					var btn = el.cloneNode(true);
-					console.log(el);
-  					console.log(btn);
+					
+					var templateText = ""; //get the inner html text first
+					templateText = "<div><b>HELLO!!!</b></div>";
+					
+					var newNode = el.cloneNode(true);
+					newNode.innerHTML = templateText;
+					el.parentElement.insertBefore(newNode,el);
 
-					el.parentElement.insertBefore(btn,el); 
+
+					//el.parentElement.removeChild(newNode,el);
+					//el.outerHtml = "asd";
 				}
 			);
 
@@ -191,12 +195,24 @@
 				}
 
 			}
+
+			arrObj.oldPush = arrObj.push;
+			arrObj.oldSplice = arrObj.splice;
+
+			arrObj.push = function(){
+				arrObj.oldPush();
+			}
+
+			arrObj.splice = function(){
+				arrObj.oldSplice();
+			}
+
 			return arrObj;
 		}
 
 		var propUnits = {};
 
-		var fakeObj = {
+		var deceratorObj = {
 			init: function(){
 
 				if (decObj)
@@ -241,7 +257,7 @@
 			toPlant: function(name){PlantBag.register(name, this);}
 		};
 
-		return fakeObj;
+		return deceratorObj;
 	}
 
 	var watchObjects = [];
