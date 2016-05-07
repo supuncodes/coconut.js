@@ -2,6 +2,6 @@
   "name": "Coconut.JS",
   "description":"A simple MVVM framework for Javascript",
   "version": "0.1 - alpha",
-  "private": true,
+  "private": false,
   "dependencies": {}
 }
