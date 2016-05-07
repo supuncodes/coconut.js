@@ -1,7 +1,6 @@
 # coconut.js
 
-Coconut.JS is a javascript MVVM framework insired by Vue.JS and Angular.js. You might wonder why do i need another MVVM framework when there already MVVM frameworks are available out there. So the reason why Coconut.JS came out is because most of those frameworks restrict the developer to follow their syntaxes and guidlines to write applications. Coconut.JS allows the javascript developer to use Vanilla Javascript to write MVVM applications. 
-
+Coconut.JS is a javascript MVVM framework insired by Vue.JS and Angular.js. The main advantage of using coconut.js is its simplicity complared to other frameworks. Angular.JS and Vue.JS are amazing frameworks that are stable wnd widely used. However those frameworks restrict the developer to follow their syntaxes and guidlines to write applications. Coconut.js addresses that issue by providing a framework for the developer to use vanilla javaScript to write MVVM applications.
 
 please note that Coconut.JS is still in its infant stages so we do not recommend it for commercial applications at this point. Still you are welcome to contribute by developing and testing.
 
@@ -60,8 +59,8 @@ A seed is similar to an angular.js directive. currently in the alpha version onl
 
 binds data to a particular element.
 
-```javascript
-pol-bind
+```html
+<p pol-bind>Hello : {{name}}</p>	
 ```
 
 
@@ -70,7 +69,15 @@ pol-bind
 binds a click event to an element
 
 ```javascript
-pol-click
+var shell = coconut.shell("idMain", {state:data});
+shell.submit = function(){
+	alert ("submitted");
+};
+```
+
+
+```html
+<button pol-click="submit">Submit</button>
 ```
 
 
@@ -80,7 +87,13 @@ pol-click
 binds an array of elements to the DOM
 
 ```javascript
-pol-repeat
+var shell = coconut.shell("idMain", {state:data});
+shell.testArray: [{id:1, name:"Supun"},{id:2, name:"Supun 2"}]
+```
+
+
+```html
+<p pol-repeat="a in testArray"><div>{{a.name}}</div></p>
 ```
 
 
@@ -100,5 +113,6 @@ coconut.newseed("my-click", function(el){
 
 
 
+# Licencing
 
-
+coconut.js is released under [LGPL](http://www.gnu.org/licenses/lgpl-3.0.en.html) licence.
