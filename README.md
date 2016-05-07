@@ -10,3 +10,8 @@ Coconut.JS is a javascript MVVM framework insired by Vue.JS and Angular.js. You 
     </body>
 </html>
 ```
+
+# License
+
+Coconut.JS is released under [LGPL](http://www.gnu.org/licenses/lgpl-3.0.en.html) licence.
+
