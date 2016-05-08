@@ -28,18 +28,23 @@
 
 		function registerDefaultSeeds(){
 
-			register("pol-repeat", function(el,value, path, watchObj, dec, DOMManager){
-					
-					var templateText = ""; //get the inner html text first
-					templateText = "<div><b>HELLO!!!</b></div>";
-					
-					var newNode = el.cloneNode(true);
-					newNode.innerHTML = templateText;
-					el.parentElement.insertBefore(newNode,el);
+			register("pol-repeat", function(el,value, path, watchObj, dec, DOMManager){				
+					var templateText = el.innerHTML;
 
+					var parts = value.split("in");
+					if (parts.length == 2) {
+						var refVal = parts[0].trim();
+						var objVal = parts[1].trim();
+						var arr = dec[objVal];
+						for (var i=0;i<arr.length;i++){
+							var newNode = el.cloneNode(true);
+							newNode.removeAttribute("pol-repeat");
+							newNode.innerHTML = templateText;
+							el.parentElement.insertBefore(newNode,el);							
+						}
 
-					//el.parentElement.removeChild(newNode,el);
-					//el.outerHtml = "asd";
+						el.parentElement.removeChild(el,el);
+					}
 				}
 			);
 
@@ -284,8 +289,7 @@
 
 	if (!String.prototype.includes) 
 	String.prototype.includes = function(str, ignoreCase) {
-	  return (ignoreCase ? this.toUpperCase() : this)
-	    .indexOf(ignoreCase ? str.toUpperCase() : str) >= 0;
+	  return (ignoreCase ? this.toUpperCase() : this).indexOf(ignoreCase ? str.toUpperCase() : str) >= 0;
 	};
 
 
