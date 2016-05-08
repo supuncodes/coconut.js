@@ -74,7 +74,7 @@
 						if (value.trim() === ""){
 							var str = el.innerHTML;
 							if (str)
-							if (str.contains("{{") && str.contains("}}")){
+							if (str.includes("{{") && str.includes("}}")){
 								var propName = str.substring(str.indexOf("{{") +2, str.indexOf("}}"));
 								var propPath = path + "." + propName;
 								watchObj.watch(propPath, el, "@@INNER", str);
@@ -280,6 +280,14 @@
 				watchObjects[wi].init();
 		}
 	}
+
+
+	if (!String.prototype.includes) 
+	String.prototype.includes = function(str, ignoreCase) {
+	  return (ignoreCase ? this.toUpperCase() : this)
+	    .indexOf(ignoreCase ? str.toUpperCase() : str) >= 0;
+	};
+
 
 	window.addEventListener("load", window.coconut.init);
 })()
